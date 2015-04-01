@@ -30,3 +30,10 @@
 
 # Debug files
 *.dSYM/
+
+# PDFs of project
+fiche_evaluation_minixfs_etape1.pdf
+
+# Archive of python files
+minixfs.tgz
+
