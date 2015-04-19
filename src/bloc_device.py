@@ -23,12 +23,7 @@ class bloc_device(object):
         with open(self.filename, 'rb') as f:
             f.seek(0, 0)    # Go to the beginning of the file to be sure.
             f.seek(block_num * self.block_size, 0) # Go to the right offset.
-            print "READ Bloc %s" % block_num
-            print "Position %s" % (block_num * self.block_size)
-            blocka = f.read(self.block_size * num_of_block)
-            print binascii.hexlify(blocka)
-            #return f.read(self.block_size * num_of_block)
-            return blocka
+            return f.read(self.block_size * num_of_block)
 
     # OK, according to tester.py
     def write_bloc(self, block_num, block):
@@ -38,13 +33,5 @@ class bloc_device(object):
         with open(self.filename, 'r+b') as f:
             f.seek(0, 0)
             f.seek(block_num * self.block_size, 0) # Go to the right offset.
-            print "WRITE Bloc %s" % block_num
-            print "Position %s" % (block_num * self.block_size)
-            print binascii.hexlify(block)
             f.write(block)
-            # What happens if size of block is not equal to block_size ??? write 0 at the end to complete ?
-
-            # Can we write multiple block ?
-            # Do I need to clear the block before writing the new one ?
-            # -> If the block is smaller, old data will still be present ?
         return

@@ -39,16 +39,9 @@ class MinixTester(unittest.TestCase):
     #is the one we expect.
     def test_1_bloc_device_read_bloc(self):
         self.disk=bloc_device(BLOCK_SIZE,workfile)
-        print "Bloc 2"
         bloc2=self.disk.read_bloc(2)
-        print "BLOC 2"
-        print binascii.hexlify(BLOC2)
-        print "Bloc 5"
-        print binascii.hexlify(BLOC5)
         bloc5=self.disk.read_bloc(5)
-        print "Bloc 7"
         bloc7=self.disk.read_bloc(7)
-        print "Bloc 24"
         bloc24=self.disk.read_bloc(24)
         self.assertEqual(bloc2,BLOC2)
         self.assertEqual(bloc5,BLOC5)
