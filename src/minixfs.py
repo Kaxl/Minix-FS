@@ -7,8 +7,24 @@ from minix_inode import *
 from minix_superbloc import *
 from bloc_device import *
 
+from bitarray import bitarray   # Library in C
+
 class minix_file_system(object):
+    """Class of the Minix File system."""
+
     def __init__(self,filename):
+        """Initialization of a bitarray from the bitmap of inodes."""
+        # Init of disk
+        self.disk = bloc_devie(BLOCK_SIZE, filename)
+        # Init of Minix Super block
+        self.super_bloc = self.minix_super_bloc(self.disk)
+        # Init of Inodes bitmap
+        self.inode_map = bitarray()
+        self.inode_map = self.disk.read_block(2, self.super_bloc.s_imap_blocks)
+        # Init of Blocks bitmap
+        self.zone_map = bitarray()
+        self.zone_map = self.disk.read_block(2 + self.super_bloc.s_imap_blocks + 1,
+                                             self.super_bloc.s_zmap_blocks)
         return
 
     #return the first free inode number available
