@@ -7,16 +7,29 @@ class minix_inode(object):
     #inodes can be initializted from given values or from raw bytes contents coming from the device
     def __init__(self,raw_inode=None,num=0,mode=0,uid=0,size=0,time=0,gid=0,nlinks=0,zone=[],indir_zone=0,dblr_indir_zone=0):
         if raw_inode is None:
-            self.i_ino=num
-            self.i_mode=mode
-            self.i_uid=uid
-            self.i_size=size
-            self.i_time=time
-            self.i_gid=gid
-            self.i_nlinks=nlinks
-            self.i_zone=zone
-            self.i_indir_zone=indir_zone
-            self.i_dbl_indr_zone=dblr_indir_zone
+            self.i_ino = num
+            self.i_mode = mode
+            self.i_uid = uid
+            self.i_size = size
+            self.i_time = time
+            self.i_gid = gid
+            self.i_nlinks = nlinks
+            self.i_zone = zone
+            self.i_indir_zone = indir_zone
+            self.i_dbl_indr_zone = dblr_indir_zone
+        else:
+            # If raw_inode is provided, parse it and affect it to each field.
+            self.i_ino = num
+            self.i_mode = struct.unpack('<H', raw_inode[0:2])[0]
+            self.i_uid = struct.unpack('<H', raw_inode[2:4])[0]
+            self.i_size = struct.unpack('<I', raw_inode[4:8])[0]
+            self.i_time = struct.unpack('<I', raw_inode[8:12])[0]
+            self.i_gid = struct.unpack('<B', raw_inode[12:13])[0]
+            self.i_nlinks = struct.unpack('<B', raw_inode[13:14])[0]
+            self.i_zone = struct.unpack('<H', raw_inode[14:16])
+            self.i_indir_zone = struct.unpack('<H', raw_inode[16:18])[0]
+            self.i_dbl_indr_zone = struct.unpack('<H', raw_inode[18:20])[0]
+
 
     def __eq__(self,other):
         if isinstance(other,minix_inode):

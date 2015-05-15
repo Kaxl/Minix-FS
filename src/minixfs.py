@@ -15,16 +15,40 @@ class minix_file_system(object):
     def __init__(self,filename):
         """Initialization of a bitarray from the bitmap of inodes."""
         # Init of disk
-        self.disk = bloc_devie(BLOCK_SIZE, filename)
+        self.disk = bloc_device(BLOCK_SIZE, filename)
         # Init of Minix Super block
-        self.super_bloc = self.minix_super_bloc(self.disk)
+        self.super_bloc = minix_superbloc(self.disk)
         # Init of Inodes bitmap
-        self.inode_map = bitarray()
-        self.inode_map = self.disk.read_block(2, self.super_bloc.s_imap_blocks)
+        self.inode_map = bitarray(endian='little')
+        # Block one is for the superblock, so we start at 2.
+        self.inode_map.frombytes(self.disk.read_bloc(MINIX_SUPER_BLOCK_NUM + 1,
+                                                     int(self.super_bloc.s_imap_blocks)))
         # Init of Blocks bitmap
-        self.zone_map = bitarray()
-        self.zone_map = self.disk.read_block(2 + self.super_bloc.s_imap_blocks + 1,
-                                             self.super_bloc.s_zmap_blocks)
+        self.zone_map = bitarray(endian='little')
+        self.zone_map.frombytes(self.disk.read_bloc(MINIX_SUPER_BLOCK_NUM + self.super_bloc.s_imap_blocks + 1,
+                                                    self.super_bloc.s_zmap_blocks))
+        # Init of Inodes list
+        self.inodes_list = []
+        # Append all inodes in the list.
+        #for i in xrange(1, self.super_bloc.s_ninodes - 1):
+        #for block in self.inode_map:
+        #    print(block)
+        #print self.inode_map.tobytes()
+        #i = self.inode_map[0:256].tobytes()
+        #inode = minix_inode(i)
+        #print inode
+        #for inode in self.inode_map.tobytes():
+        #    print inode
+            #i = minix_inode(inode)
+            #print(i)
+            #self.inodes_list.append(i)
+
+
+
+
+            #current_inode = minix_inode(num=i)
+            #self.inodes_list.append(current_inode)
+
         return
 
     #return the first free inode number available
@@ -33,11 +57,17 @@ class minix_file_system(object):
     #Inode 0 is never and is always set.
     #according to the inodes bitmap
     def ialloc(self):
-        return
+        print "IALLOC"
+        for i in xrange(0, self.super_bloc.s_ninodes - 1):
+            if  not (self.inode_map[i]):
+                print "FOUND : %s" %i
+                return i
 
     #toggle an inode as available for the next ialloc()
     def ifree(self,inodnum):
+        self.inode_map[inodnum] = 0
         return
+
     #return the first free bloc index in the volume. The bitmap
     #indicate the index from the bloc zone, add first_datazone then
     #to the bloc index
