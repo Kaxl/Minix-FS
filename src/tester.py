@@ -94,6 +94,7 @@ class MinixTester(unittest.TestCase):
     def test_5_fs_inode_list(self):
         self.minixfs=minix_file_system(workfile)
         self.assertEqual(self.minixfs.inodes_list,INODELIST);
+        print "END test 5"
 
 
     #testing ialloc()/ifree()

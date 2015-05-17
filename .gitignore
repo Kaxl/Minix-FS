@@ -1,3 +1,9 @@
+# Python files
+*.pyc
+# Image files
+*.gen
+*.genwrite
+
 # Object files
 *.o
 *.ko
