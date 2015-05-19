@@ -3,6 +3,9 @@
 # Image files
 *.gen
 *.genwrite
+os
+sys
+unittest
 
 # Object files
 *.o
