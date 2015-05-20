@@ -10,6 +10,8 @@ from tester_answers import *
 
 from bitarray import bitarray   # Library in C
 
+import binascii
+
 class minix_file_system(object):
     """Class of the Minix File system."""
 
@@ -80,8 +82,40 @@ class minix_file_system(object):
         return
 
     def bmap(self, inode, blk):
+        # Cas 0 : direct block.
+        # Get the number of direct bloc (element in zone != 0).
+        #nb_direct_bloc = sum(bloc != 0 for bloc in inode.i_zone)
+        nb_direct_bloc = len(inode.i_zone)
+        if blk < nb_direct_bloc:
+            return inode.i_zone[blk]
 
-        return
+        # Subtract the number of directs blocks.
+        blk -= nb_direct_bloc
+
+        # Cas 1 : simple indirection.
+        # With an indirect bloc, we can address BLOCK_SIZE / 2 direct block.
+        # Each inode takes 32 bytes.
+        if inode.i_indir_zone != 0 and blk < MINIX_ZONESZ:
+            indirect_bloc = self.disk.read_bloc(inode.i_indir_zone)
+            return struct.unpack('<H', indirect_bloc[blk * 2:blk * 2 + 2])[0]
+
+        # Subtract the number of directs blocks we could have addressed with a simple redirection.
+        blk -= BLOCK_SIZE / 2
+
+        # Cas 2 : double indirection.
+        # With an indirect bloc, we can address BLOCK_SIZE * BLOCK_SIZE direct block.
+        if inode.i_dbl_indr_zone != 0 and blk < BLOCK_SIZE * BLOCK_SIZE:
+            # Each value is on two bytes so we need to multiply by 2 the bloc number.
+            # Load the indirect bloc.
+            indirect_bloc = self.disk.read_bloc(inode.i_dbl_indr_zone)
+            # Look for the number of the next indirect bloc.
+            indirect2_bloc_nb = struct.unpack('<H', indirect_bloc[blk / MINIX_ZONESZ * 2:blk / MINIX_ZONESZ * 2 + 2])[0]
+            # Load the double indirect bloc.
+            indirect2_bloc = self.disk.read_bloc(indirect2_bloc_nb)
+            return struct.unpack('<H', indirect2_bloc[blk % MINIX_ZONESZ * 2:blk % MINIX_ZONESZ * 2 + 2])[0]
+
+        return 0
+
 
     # lookup for a name in a directory, and return its inode number, given inode directory dinode
     def lookup_entry(self, dinode, name):

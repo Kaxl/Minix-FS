@@ -51,7 +51,7 @@ class minix_inode(object):
             #print "i_dbl_indr_zone : %s" % self.i_dbl_indr_zone
 
 
-    def __eq__(self,other):
+    def __eq__(self, other):
         if isinstance(other, minix_inode):
             return self.i_ino == other.i_ino and \
                    self.i_mode == other.i_mode and \
