@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-#Note : minix-fs types are little endian
+# Note : minix-fs types are little endian
 
 from constantes import *
 from minix_inode import *
@@ -48,64 +48,63 @@ class minix_file_system(object):
 
         return
 
-    #return the first free inode number available
-    #starting at 0 and upto s.n_inodes-1.
-    #The bitmap ranges from index 0 to inod_num-1
-    #Inode 0 is never and is always set.
-    #according to the inodes bitmap
+    # return the first free inode number available
+    # starting at 0 and upto s.n_inodes-1.
+    # The bitmap ranges from index 0 to inod_num-1
+    # Inode 0 is never and is always set.
+    # according to the inodes bitmap
     def ialloc(self):
-        print "IALLOC"
-        for i in xrange(1, self.super_bloc.s_ninodes - 1):
-            if  not (self.inode_map[i]):
-                print "FOUND INODE : %s" % i
+        for i in xrange(0, self.super_bloc.s_ninodes):
+            if not (self.inode_map[i]):
+                self.ifree(i)
                 return i
 
-    #toggle an inode as available for the next ialloc()
+    # toggle an inode as available for the next ialloc()
     def ifree(self,inodnum):
-        self.inode_map[inodnum] = 0
+        self.inode_map[inodnum] = not self.inode_map[inodnum]
         return
 
-    #return the first free bloc index in the volume. The bitmap
-    #indicate the index from the bloc zone, add first_datazone then
-    #to the bloc index
+    # return the first free bloc index in the volume. The bitmap
+    # indicate the index from the bloc zone, add first_datazone then
+    # to the bloc index
     def balloc(self):
-        print "BALLOC"
         for i in xrange(0, self.super_bloc.s_nzones):
             if not (self.zone_map[i]):
-                print "FOUND BLOC : %s" % i
-                return i
+                self.bfree(i)
+                return i + self.super_bloc.s_firstdatazone
 
-    #toggle a bloc as available for the next balloc()
-    #blocnum is an index in the zone_map
-    def bfree(self,blocnum):
-        self.zone_map[blocnum] = 0
+    # toggle a bloc as available for the next balloc()
+    # blocnum is an index in the zone_map
+    def bfree(self, blocnum):
+        self.zone_map[blocnum] = not self.zone_map[blocnum]
         return
 
-    def bmap(self,inode,blk):
+    def bmap(self, inode, blk):
+
         return
 
-    #lookup for a name in a directory, and return its inode number, given inode directory dinode
-    def lookup_entry(self,dinode,name):
+    # lookup for a name in a directory, and return its inode number, given inode directory dinode
+    def lookup_entry(self, dinode, name):
         return
 
-    #find an inode number according to its path
-    #ex : '/usr/bin/cat'
-    #only works with absolute paths
+    # find an inode number according to its path
+    # ex : '/usr/bin/cat'
+    # only works with absolute paths
 
-    def namei(self,path):
+    def namei(self, path):
         return
 
-    def ialloc_bloc(self,inode,blk):
+    def ialloc_bloc(self, inode, blk):
         return
 
     #create a new entry in the node
     #name is an unicode string
     #parameters : directory inode, name, inode number
-    def add_entry(self,dinode,name,new_node_num):
+    def add_entry(self, dinode, name, new_node_num):
         return
 
     #delete an entry named "name"
-    def del_entry(self,inode,name):
+    def del_entry(self, inode, name):
         return
 
 

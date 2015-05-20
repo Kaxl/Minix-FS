@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 from constantes import *
 
-import binascii
-
 class minix_superbloc(object):
     """Class superbloc."""
 

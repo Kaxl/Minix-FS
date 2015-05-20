@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-#minix est little endian par defaut
+# Minix est little endian par défaut.
 from constantes import *
 
 class minix_inode(object):
@@ -52,7 +52,7 @@ class minix_inode(object):
 
 
     def __eq__(self,other):
-        if isinstance(other,minix_inode):
+        if isinstance(other, minix_inode):
             return self.i_ino == other.i_ino and \
                    self.i_mode == other.i_mode and \
                    self.i_uid == other.i_uid and \
@@ -65,14 +65,14 @@ class minix_inode(object):
                    self.i_dbl_indr_zone == other.i_dbl_indr_zone
 
     def __repr__(self):
-        return "minix_inode("+"num="+str(self.i_ino)+\
-                              ",mode="+str(self.i_mode)+\
-                              ",uid="+str(self.i_uid)+\
-                              ",size="+str(self.i_size)+\
-                              ",time="+str(self.i_time)+\
-                              ",gid="+str(self.i_gid)+\
-                              ",nlinks="+str(self.i_nlinks)+\
-                              ",zone="+str(eval(repr(self.i_zone)))+\
-                              ",indir_zone="+str(self.i_indir_zone)+\
-                              ",dblr_indir_zone="+str(self.i_dbl_indr_zone)+\
+        return "minix_inode("+"num="+str(self.i_ino) +\
+                              ",mode="+str(self.i_mode) +\
+                              ",uid="+str(self.i_uid) +\
+                              ",size="+str(self.i_size) +\
+                              ",time="+str(self.i_time) +\
+                              ",gid="+str(self.i_gid) +\
+                              ",nlinks="+str(self.i_nlinks) +\
+                              ",zone="+str(eval(repr(self.i_zone))) +\
+                              ",indir_zone="+str(self.i_indir_zone) +\
+                              ",dblr_indir_zone="+str(self.i_dbl_indr_zone) +\
                               ")"
