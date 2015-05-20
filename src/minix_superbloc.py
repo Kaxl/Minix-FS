@@ -8,7 +8,7 @@ class minix_superbloc(object):
     """Class superbloc."""
 
     # OK, according to tester.py.
-    def __init__(self,bloc_device):
+    def __init__(self, bloc_device):
         """Initialisation of the superblock.
         System is always in little endian (value of s_magic not checked)."""
         # Get the first bloc (superblock).
