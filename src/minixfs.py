@@ -102,8 +102,8 @@ class minix_file_system(object):
         blk -= BLOCK_SIZE / 2
 
         # Cas 2 : double indirection.
-        # With an indirect bloc, we can address BLOCK_SIZE * BLOCK_SIZE direct block.
-        if inode.i_dbl_indr_zone != 0 and blk < BLOCK_SIZE * BLOCK_SIZE:
+        # With an indirect block, we can address BLOCK_SIZE * BLOCK_SIZE direct block.
+        if inode.i_dbl_indr_zone != 0 and blk < MINIX_ZONESZ * MINIX_ZONESZ:
             # Each value is on two bytes so we need to multiply by 2 the bloc number.
             # Load the indirect bloc.
             indirect_bloc = self.disk.read_bloc(inode.i_dbl_indr_zone)
@@ -128,17 +128,44 @@ class minix_file_system(object):
                 # Check if the name is in the inode.
                 if name in inode:
                     return struct.unpack('<H', data[j:j + 2])[0]
-        return
 
     # find an inode number according to its path
     # ex : '/usr/bin/cat'
     # only works with absolute paths
-
     def namei(self, path):
-        return
+        # Get the first inode (root)
+        inode = self.inodes_list[MINIX_ROOT_INO].i_ino
+        # We don't need the first element of the list because we already got the first inode (root).
+        path_list = path.split('/')[1:]
+        for dir in path_list:
+            # Get the inode of the next element of the path.
+            inode = self.lookup_entry(self.inodes_list[inode], dir)
 
+        return inode
+
+    # Add a new empty block in an inode.
     def ialloc_bloc(self, inode, blk):
-        return
+        # Cas 0 : direct block.
+        nb_direct_bloc = len(inode.i_zone)
+        if blk < nb_direct_bloc:
+            if inode.i_zone[blk] == 0:
+                inode.i_zone[blk] = self.balloc()
+            return inode.i_zone[blk]
+
+        # Subtract the number of directs blocks.
+        blk -= nb_direct_bloc
+
+        # Cas 1 : simple indirection.
+        if blk < MINIX_ZONESZ:
+            if inode.i_indir_zone == 0:
+                inode.i_indir_zone = self.balloc()
+
+            indirect_bloc = self.disk.read_bloc(inode.i_indir_zone)
+            indirect_bloc_nb = struct.unpack('<H', indirect_bloc[blk / MINIX_ZONESZ * 2:blk / MINIX_ZONESZ * 2 + 2])[0]
+            if indirect_bloc_nb == 0:
+                indirect_bloc[indirect_bloc_nb] = self.balloc()
+                self.disk.write_bloc(inode.i_indir_zone, indirect_bloc_nb)
+            return indirect_bloc[indirect_bloc_nb]
 
     # create a new entry in the node
     # name is an unicode string
