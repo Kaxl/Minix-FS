@@ -8,14 +8,13 @@ from minix_superbloc import *
 from bloc_device import *
 from tester_answers import *
 
-from bitarray import bitarray   # Library in C
+from bitarray import bitarray  # Library in C
 
-import binascii
 
 class minix_file_system(object):
     """Class of the Minix File system."""
 
-    def __init__(self,filename):
+    def __init__(self, filename):
         """Initialization of a bitarray from the bitmap of inodes."""
         # Init of disk.
         self.disk = bloc_device(BLOCK_SIZE, filename)
@@ -41,7 +40,7 @@ class minix_file_system(object):
         for bloc_number in xrange(first_bloc_inodes, self.super_bloc.s_firstdatazone):
             bloc = self.disk.read_bloc(bloc_number)
             # Split the block 32 Bytes by 32 Bytes.
-            for i in xrange (0, BLOCK_SIZE / INODE_SIZE):
+            for i in xrange(0, BLOCK_SIZE / INODE_SIZE):
                 # Create the current inode.
                 inode = minix_inode(bloc[i * INODE_SIZE:(i + 1) * INODE_SIZE],
                                     (bloc_number - first_bloc_inodes) * INODE_SIZE + i + 1)
@@ -62,7 +61,7 @@ class minix_file_system(object):
                 return i
 
     # toggle an inode as available for the next ialloc()
-    def ifree(self,inodnum):
+    def ifree(self, inodnum):
         self.inode_map[inodnum] = not self.inode_map[inodnum]
         return
 
@@ -84,7 +83,7 @@ class minix_file_system(object):
     def bmap(self, inode, blk):
         # Cas 0 : direct block.
         # Get the number of direct bloc (element in zone != 0).
-        #nb_direct_bloc = sum(bloc != 0 for bloc in inode.i_zone)
+        # nb_direct_bloc = sum(bloc != 0 for bloc in inode.i_zone)
         nb_direct_bloc = len(inode.i_zone)
         if blk < nb_direct_bloc:
             return inode.i_zone[blk]
@@ -116,9 +115,19 @@ class minix_file_system(object):
 
         return 0
 
-
     # lookup for a name in a directory, and return its inode number, given inode directory dinode
     def lookup_entry(self, dinode, name):
+        # Run over blocs of inode.
+        for i in range(0, dinode.i_ino + dinode.i_size):
+            bloc_number = self.bmap(dinode, i)
+            data = self.disk.read_bloc(bloc_number)
+
+            # Check each inodes to compare the name.
+            for j in xrange(0, BLOCK_SIZE, INODE_SIZE):
+                inode = data[j:j + INODE_SIZE]
+                # Check if the name is in the inode.
+                if name in inode:
+                    return struct.unpack('<H', data[j:j + 2])[0]
         return
 
     # find an inode number according to its path
@@ -131,14 +140,12 @@ class minix_file_system(object):
     def ialloc_bloc(self, inode, blk):
         return
 
-    #create a new entry in the node
-    #name is an unicode string
-    #parameters : directory inode, name, inode number
+    # create a new entry in the node
+    # name is an unicode string
+    # parameters : directory inode, name, inode number
     def add_entry(self, dinode, name, new_node_num):
         return
 
-    #delete an entry named "name"
+    # delete an entry named "name"
     def del_entry(self, inode, name):
         return
-
-
