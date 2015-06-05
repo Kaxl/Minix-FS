@@ -49,3 +49,9 @@ fiche_evaluation_minixfs_etape1.pdf
 # Archive of python files
 minixfs.tgz
 
+# CodeBlocks files
+*.cbp
+*.depend
+
+# Binaries
+block_server
