@@ -52,6 +52,7 @@ minixfs.tgz
 # CodeBlocks files
 *.cbp
 *.depend
+*.layout
 
 # Binaries
 block_server
