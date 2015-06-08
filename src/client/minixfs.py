@@ -166,6 +166,7 @@ class minix_file_system(object):
                 indirect_bloc[indirect_bloc_nb] = self.balloc()
                 self.disk.write_bloc(inode.i_indir_zone, indirect_bloc_nb)
             return indirect_bloc[indirect_bloc_nb]
+        # TODO : Gestion des doubles redirections ?
 
     # create a new entry in the node
     # name is an unicode string
