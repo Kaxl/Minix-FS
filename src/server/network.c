@@ -97,3 +97,13 @@ int getRequest(int sock, Request* req)
     // Returns FALSE if the payload isn't complete
     return (offset == REQUEST_HEADER_SIZE + req->length);
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+int sendResponse(int sock, Response* resp, uint32_t payloadLength)
+{
+    if (write(sock, resp, RESPONSE_HEADER_SIZE + payloadLength) < 0)
+    {
+        return 0;
+    }
+    return 1;
+}

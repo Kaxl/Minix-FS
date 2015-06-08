@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 
-int openFile(char* filePath);
 int readData(int fd, int offset, int length, uint8_t* target);
 int writeData(int fd, int offset, int length, uint8_t* source);
 

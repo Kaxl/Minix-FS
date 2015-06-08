@@ -37,6 +37,6 @@ typedef struct __attribute__ ((__packed__)) Response
 int openListeningSocket(int port);
 int waitClientConnection(int listeningSocket);
 int getRequest(int sock, Request* req);
-int sendResponse(int sock, Response* resp);
+int sendResponse(int sock, Response* resp, uint32_t payloadLength);
 
 #endif // NETWORK_H_INCLUDED
