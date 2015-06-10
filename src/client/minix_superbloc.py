@@ -19,8 +19,10 @@ class minix_superbloc(object):
         # To get the value, use [0].
 
         #print "\nSUPERBLOCK"
+        # Number maximum of files.
         self.s_ninodes = struct.unpack('<H', block[0:2])[0]
         #print "s_ninodes : %s" % self.s_ninodes
+        # Number of blocks.
         self.s_nzones = struct.unpack('<H', block[2:4])[0]
         #print "s_nzones : %s" % self.s_nzones
         self.s_imap_blocks = struct.unpack('<H', block[4:6])[0]
