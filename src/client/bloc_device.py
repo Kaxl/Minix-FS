@@ -35,3 +35,6 @@ class bloc_device(object):
             f.seek(block_num * self.block_size, 0) # Go to the right offset.
             f.write(block)
         return
+
+# Initialise un superblock avec des 0.
+# new_sb = bytearray("".ljust(1024, '\x00'))
