@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <arpa/inet.h>
+#include <time.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int openListeningSocket(int port)
@@ -41,6 +42,7 @@ int waitClientConnection(int listeningSocket)
     if (listen(listeningSocket, 1) < 0)
     {
         perror("listen");
+        shutdown(listeningSocket, SHUT_RDWR);
         exit(EXIT_FAILURE);
     }
 
@@ -52,6 +54,7 @@ int waitClientConnection(int listeningSocket)
     if ((clientSocket = accept(listeningSocket, (struct sockaddr*)&clientAddress, &clientLength)) < 0)
     {
         perror("accept");
+        shutdown(listeningSocket, SHUT_RDWR);
         exit(EXIT_FAILURE);
     }
 
@@ -64,45 +67,85 @@ int getRequest(int sock, Request* req)
     uint8_t* buffer = (uint8_t*)req;
     int nbByte;
     int offset = 0;
+    int lengthToRead = REQUEST_HEADER_SIZE;
+    int headerReceived = 0;
+    clock_t start = clock();
 
-    // Reads the header of the request message
-    for (int i = 0; i < RECEPTION_TIMEOUT && offset < REQUEST_HEADER_SIZE; i++)
+    while(1)
     {
-        if ((nbByte = read(sock, &buffer[offset], REQUEST_HEADER_SIZE - offset)) < 0)
+        // Reads bytes from the socket
+        if ((nbByte = read(sock, &buffer[offset], lengthToRead - offset)) < 0)
         {
             perror("read");
+            shutdown(sock, SHUT_RDWR);
             exit(EXIT_FAILURE);
         }
-        offset += nbByte;
-    }
 
-    // Returns FALSE if the header is not complete or incorrect
-    if (offset != REQUEST_HEADER_SIZE || req->magic != REQUEST_MAGIC ||
-        (req->type != CMD_READ && req->type != CMD_WRITE))
-    {
-        return 0;
-    }
-
-    // Reads the payload
-    for (int i = 0; i < RECEPTION_TIMEOUT && offset < REQUEST_HEADER_SIZE + req->length; i++)
-    {
-        if ((nbByte = read(sock, &buffer[offset], REQUEST_HEADER_SIZE - offset)) < 0)
+        // If bytes were received, increments the offset and restarts the timer
+        if (nbByte > 0)
         {
-            perror("read");
-            exit(EXIT_FAILURE);
+            offset += nbByte;
+            start = clock();
         }
-        offset += nbByte;
-    }
 
-    // Returns FALSE if the payload isn't complete
-    return (offset == REQUEST_HEADER_SIZE + req->length);
+        // If enough bytes were received
+        if (offset == lengthToRead)
+        {
+            // Header received
+            if (!headerReceived)
+            {
+                printf("header received\n");
+
+                req->magic = ntohl(req->magic);
+                req->type = ntohl(req->type);
+                req->handle = ntohl(req->handle);
+                req->offset = ntohl(req->offset);
+                req->length = ntohl(req->length);
+
+                if(req->magic != REQUEST_MAGIC || (req->type != CMD_READ && req->type != CMD_WRITE))
+                {
+                    printf("bad header\n");
+                    return 0;
+                }
+                if(req->type == CMD_READ || req->length == 0)
+                {
+                    return 1;
+                }
+                lengthToRead += req->length;
+                headerReceived = 1;
+            }
+            else // Payload received
+            {
+                printf("payload received\n");
+                /*
+                for(int i = REQUEST_HEADER_SIZE; i < REQUEST_HEADER_SIZE + req->length; i += 4)
+                {
+                    buffer[i] = ntohl(buffer[i]);
+                }
+                */
+                return 1;
+            }
+        }
+
+        // Checks if timeout
+        if ((clock() - start) * 1000 / CLOCKS_PER_SEC > RECEPTION_TIMEOUT)
+        {
+            printf("timeout\n");
+            return 0;
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int sendResponse(int sock, Response* resp, uint32_t payloadLength)
 {
+    resp->magic = htonl(resp->magic);
+    resp->handle = htonl(resp->handle);
+    resp->error = htonl(resp->error);
+
     if (write(sock, resp, RESPONSE_HEADER_SIZE + payloadLength) < 0)
     {
+        perror("write");
         return 0;
     }
     return 1;

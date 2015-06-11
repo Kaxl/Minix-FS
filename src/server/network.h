@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-#define LISTENING_PORT          1600
-#define RECEPTION_TIMEOUT       20
+#define LISTENING_PORT          2000
+#define RECEPTION_TIMEOUT       5000
 
 #define REQUEST_HEADER_SIZE     20
 #define RESPONSE_HEADER_SIZE    12
