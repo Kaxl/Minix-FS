@@ -15,7 +15,6 @@ class bloc_device(object):
         self.filename = pathname
         return
 
-    # OK, according to tester.py
     def read_bloc(self, block_num, num_of_block=1):
         """Read a certain number of blocks.
            Get to the right position in the file and
@@ -25,7 +24,6 @@ class bloc_device(object):
             f.seek(block_num * self.block_size, 0) # Go to the right offset.
             return f.read(self.block_size * num_of_block)
 
-    # OK, according to tester.py
     def write_bloc(self, block_num, block):
         """Write a certain number of blocks.
            Get to the right position (block number) and
@@ -36,5 +34,3 @@ class bloc_device(object):
             f.write(block)
         return
 
-# Initialise un superblock avec des 0.
-# new_sb = bytearray("".ljust(1024, '\x00'))
