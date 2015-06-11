@@ -7,6 +7,7 @@ from minix_inode import *
 from minix_superbloc import *
 from bloc_device import *
 from tester_answers import *
+from array import *
 
 from bitarray import bitarray  # Library in C
 
@@ -63,7 +64,7 @@ class minix_file_system(object):
 
     # toggle an inode as available for the next ialloc()
     def ifree(self, inodnum):
-        self.inode_map[inodnum] = not self.inode_map[inodnum]
+        self.inode_map[inodnum] = False
         return
 
     # return the first free bloc index in the volume. The bitmap
@@ -149,8 +150,10 @@ class minix_file_system(object):
         # Cas 0 : direct block.
         nb_direct_bloc = len(inode.i_zone)
         if blk < nb_direct_bloc:
-            if inode.i_zone[blk] == 0:
+            if not inode.i_zone[blk]:
                 inode.i_zone[blk] = self.balloc()
+                # This line is add for addentry.
+                inode.i_size += BLOCK_SIZE
             return inode.i_zone[blk]
 
         # Subtract the number of directs blocks.
@@ -160,16 +163,23 @@ class minix_file_system(object):
         if blk < MINIX_ZONESZ:
             if not inode.i_indir_zone:
                 inode.i_indir_zone = self.balloc()
-                # Write a new bloc.
-                self.disk.write_bloc(inode.i_indir_zone, bytearray("".ljust(BLOCK_SIZE, '\x00')))
 
             indirect_bloc = self.disk.read_bloc(inode.i_indir_zone)
-            indirect_bloc_nb = struct.unpack('<H', indirect_bloc[blk / MINIX_ZONESZ * 2:blk / MINIX_ZONESZ * 2 + 2])[0]
-            if not indirect_bloc_nb:
-                indirect_bloc[indirect_bloc_nb] = self.balloc()
-                self.disk.write_bloc(inode.i_indir_zone, indirect_bloc_nb)
-            return indirect_bloc[indirect_bloc_nb]
+            if not indirect_bloc[blk]:
+                indirect_bloc[blk] = self.balloc()
+                # Write a new bloc.
+                self.disk.write_bloc(inode.i_indir_zone, indirect_bloc)
+                inode.i_size += BLOCK_SIZE
+            return indirect_bloc[blk]
 
+
+            #indirect_bloc_nb = struct.unpack('<H', indirect_bloc[blk / MINIX_ZONESZ * 2:blk / MINIX_ZONESZ * 2 + 2])[0]
+            #if not indirect_bloc_nb:
+            #    indirect_bloc[indirect_bloc_nb] = self.balloc()
+            #    self.disk.write_bloc(inode.i_indir_zone, indirect_bloc_nb)
+            #return indirect_bloc[indirect_bloc_nb]
+
+    """
         # Subtract the number of directs blocks we could have addressed with a simple redirection.
         blk -= MINIX_ZONESZ
 
@@ -178,22 +188,26 @@ class minix_file_system(object):
             # If double indirect bloc not allocated, allocate it.
             if not inode.i_dbl_indr_zone:
                 inode.i_dbl_indr_zone = self.balloc()
-                # Write a new bloc.
-                self.disk.write_bloc(inode.i_dbl_indr_zone, bytearray("".ljust(BLOCK_SIZE, '\x00')))
-                return inode.i_dbl_indr_zone
 
-            # Check indirect bloc.
+            # Load the indirect bloc.
             indirect_bloc = self.disk.read_bloc(inode.i_dbl_indr_zone)
-
             # Look for the number of the next indirect bloc.
             indirect2_bloc_nb = struct.unpack('<H', indirect_bloc[blk / MINIX_ZONESZ * 2:blk / MINIX_ZONESZ * 2 + 2])[0]
             # Load the double indirect bloc.
             indirect2_bloc = self.disk.read_bloc(indirect2_bloc_nb)
 
+            # Write a new bloc.
+            #self.disk.write_bloc(inode.i_dbl_indr_zone, bytearray("".ljust(BLOCK_SIZE, '\x00')))
+            #return inode.i_dbl_indr_zone
+
+            # Check indirect bloc.
+            indirect_bloc = self.disk.read_bloc(inode.i_dbl_indr_zone)
+
             if not indirect2_bloc[blk]:
                 indirect2_bloc[blk] = self.balloc()
                 self.disk.write_bloc(indirect2_bloc_nb, bytearray("".ljust(BLOCK_SIZE, '\x00')))
-                return indirect2_bloc_nb[blk]
+
+            return indirect2_bloc_nb[blk]
 
 
             #dbl_indirect_bloc_nb = struct.unpack('<H', dbl_indirect_bloc[blk / MINIX_ZONESZ * 2:blk / MINIX_ZONESZ * 2 + 2])[0]
@@ -203,46 +217,63 @@ class minix_file_system(object):
             #    dbl_indirect_bloc[dbl_indirect_bloc_nb] = self.balloc()
             #    self.disk.write_bloc(inode.i_dbl_indr_zone, dbl_indirect_bloc_nb)
             #return dbl_indirect_bloc[dbl_indirect_bloc_nb]
-
+    """
 
     # create a new entry in the node
     # name is an unicode string
     # parameters : directory inode, name, inode number
     def add_entry(self, dinode, name, new_node_num):
-        # check longueur nom, si pas déjà dedans, test si c'est un dossier.
+        for i in range(0, int(round(dinode.i_size / BLOCK_SIZE, 0)) + 1):
+            # Get the block number and load the block.
+            bloc_number = self.bmap(dinode, i)
+            bloc = bytearray(self.disk.read_bloc(bloc_number))
+            # Run over the block.
+            for offset in range(0, BLOCK_SIZE, DIRSIZE):
+                if not struct.unpack_from("<H", bloc, offset)[0]:
+                    # Add the new inode number.
+                    struct.pack_into('H', bloc, offset, new_node_num)
+                    # Add the name.
+                    bloc[offset + 2:offset + DIRSIZE] = name.ljust(DIRSIZE - 2, '\x00')
+                    # Increase the size.
+                    dinode.i_size += DIRSIZE
+                    # Write the bloc.
+                    self.disk.write_bloc(bloc_number, bloc)
+                    return
 
-        # Variable to know when we've found an entry.
-        found = False
-        # Check name length.
-        if len(name) < (DIRSIZE - 1):
-            # Check if name already exist.
-            if not self.lookup_entry(dinode, name):
-                # Run over the 's_nzones' number of blocs.
-                for bloc_number in xrange(0, self.super_bloc.s_nzones):
-                    bloc = self.bmap(dinode, bloc_number)
-                    if not bloc:
-                        bloc = self.ialloc_bloc(dinode, bloc_number)
-                        #data = bytearray("".ljust(1024, '\x00'))
-
-                    # Run over the bloc until an empty inode is found.
-                    for i in xrange(0, BLOCK_SIZE, INODE_SIZE):
-                        inode = data[i:i + INODE_SIZE]
-
-                        # If inode is empty.
-                        if not inode:
-                            # Add the inode number.
-                            data = struct.pack('H', new_node_num)
-                            # Add the name (ljust fill with padding \x00).
-                            data[2:DIRSIZE] = name.ljust(DIRSIZE - 2, '\x00')
-                            # Increase the size of directory.
-                            dinode.i_size += DIRSIZE
-                            # Write the modified block on the disk.
-                            self.disk.write_bloc(bloc_number, data)
+        # If we arrive here, we need to allocate a new bloc.
+        bloc = bytearray("".ljust(BLOCK_SIZE, '\x00'))
+        # Add the new inode number.
+        struct.pack_into('H', bloc, 0, new_node_num)
+        # Add the name.
+        bloc[2:DIRSIZE] = name.ljust(DIRSIZE - 2, '\x00')
+        # Increase the size.
+        dinode.i_size += DIRSIZE
+        self.disk.write_bloc(self.ialloc_bloc(dinode, i + 1), bloc)
         return
 
-    # delete an entry named "name"
+    #delete an entry named "name"
     def del_entry(self, inode, name):
+        # Empty the name.
+        name = name.ljust(DIRSIZE - 2, '\x00')
 
+        for i in xrange(0, inode.i_size):
+            # Get the block number and load the block.
+            bloc_number = self.bmap(inode, i)
+            bloc = bytearray(self.disk.read_bloc(bloc_number))
 
-        #dircontent[i:i+2] = "".ljust(2, '\x00'))
+            # Run over entries of block.
+            for offset in xrange(0, BLOCK_SIZE, DIRSIZE):
+                if (struct.unpack_from("<14s", bloc, 2 + offset)[0] == name):
+                    # Remove the entry en free the inode.
+                    bloc[offset:offset + 2] = "".ljust(2, '\x00')
+                    #self.ifree(inode)
+                    self.disk.write_bloc(bloc_number, bloc)
+                    inode.i_size -= DIRSIZE
+                    break
+
+            # Check if block is empty and free it if so.
+            if self.disk.read_bloc(bloc_number) == "".ljust(BLOCK_SIZE, '\x00'):
+                self.bfree(bloc_number)
+
         return
+
