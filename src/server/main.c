@@ -3,23 +3,27 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdint.h>
+#include <string.h>
 #include "network.h"
 #include "file.h"
 
+int running = 1;
+
 int main(int argc, char* argv[])
 {
-    if (argc < 1)
+    if (argc < 2)
     {
         printf("Usage : %s <file_path>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
-    char* filePath = argv[1];
+    char* filePath = malloc(strlen(argv[1]) * sizeof(char));
+    strcpy(filePath, argv[1]);
     Request req;
     Response resp = {RESPONSE_MAGIC};
     int listeningSocket = openListeningSocket(LISTENING_PORT);
 
-    while (1)
+    while (running)
     {
         int clientSocket = waitClientConnection(listeningSocket);
 
@@ -65,8 +69,10 @@ int main(int argc, char* argv[])
 
         resp.handle = req.handle;
 
-        sendResponse(clientSocket, &resp, req.length);
-
+        if (!sendResponse(clientSocket, &resp, req.length))
+        {
+            printf("error sending response\n");
+        }
         close(clientSocket);
     }
 
