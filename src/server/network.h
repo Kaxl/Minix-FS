@@ -10,7 +10,7 @@
 #define RESPONSE_HEADER_SIZE    12
 #define PAYLOAD_SIZE            1024
 
-#define REQUEST_MAGIC   0x67676767
+#define REQUEST_MAGIC   0x76767676
 #define RESPONSE_MAGIC  0x87878787
 
 #define CMD_READ    0
