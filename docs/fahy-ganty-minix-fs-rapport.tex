@@ -121,15 +121,11 @@ que pour la partie avec le serveur C.
 Les tests ont été effectués sur une machine, en utilisant l'adresse ip \textit{127.0.0.1} 
 pour la connexion.
 
-  \subsection{Python}
-
-  \subsection{C}
-
 
 \section{Difficultés rencontrées}
 
-Concernant la première partie, j'ai eu de la peine avec la méthode \textit{ialloc\_bloc()}
-, car cette fonction n'est pas entièrement expliquée dans les documents du cours. 
+Concernant la première partie, la méthode \textit{ialloc\_bloc()} a été difficile à 
+réaliser, car cette fonction n'est pas entièrement expliquée dans les documents du cours. 
 Par ailleurs, les tests unitaires ne vérifiait pas le fonctionnement de la méthode 
 dans le cas d'un bloc indirect ou d'un bloc doublement indirect.
 C'est pourquoi, je ne suis pas sûr de son comportement, plus particulièrement dans 
@@ -140,7 +136,7 @@ vérifier le fonctionnement de la manipulation des structures de données via
 le serveur de blocs. Il n'était précisé nulle part que les fichiers de tests
 rechargeais l'image de base pour les tests d'après. Les fichiers de tests ne pouvait
 donc pas fonctionner avec un serveur distant pour ces raisons. C'est pour cela
-que nous avons du modifier ces fichiers de tests de manière à effectué une copie
+que nous avons du modifier ces fichiers de tests de manière à effectuer une copie
 de sauvegarde de l'image courante pour pouvoir la réinitialiser ensuite.
 Il aurait du y avoir un test unitaire à disposition spécialement prévu pour 
 tester la communication avec les sockets.
