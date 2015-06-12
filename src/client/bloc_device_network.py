@@ -30,6 +30,8 @@ class bloc_device_network(object):
         sock.connect(addr)
         sock.send(request)
 
+        #response = self.get_response(sock, num_of_block * self.block_size)
+
         response = sock.recv(12)
         response = struct.unpack("!3I", response)
 
@@ -39,9 +41,10 @@ class bloc_device_network(object):
                 # error
             else:
                 response = sock.recv(num_of_block * self.block_size)
-                payload = struct.unpack("!" + str(num_of_block * self.block_size) + "s", response)
+                payload = struct.unpack("!" + str(num_of_block * self.block_size) + "s", response)[0]
 
         sock.close()
+        #return response[3]
         return payload
 
     def write_bloc(self, block_num, block):
@@ -54,6 +57,7 @@ class bloc_device_network(object):
         sock.connect(addr)
         sock.send(request)
 
+        #response = self.get_response(sock, self.block_size)
         response = sock.recv(12)
         response = struct.unpack("!3I", response)
         """
@@ -74,3 +78,26 @@ class bloc_device_network(object):
         else:
             format += str(length) + "s"
         return struct.pack(format, 0x76767676, read_write, handle, offset, length, payload)
+
+    def get_response(self, sock, payloadLength):
+        lengthToRead = 12
+        response = ""
+        reception = ""
+        headerReceived = False
+        while True:
+            # Reads bytes from the socket
+            reception += sock.recv(lengthToRead - len(reception))
+
+            # If enough bytes were received
+            if len(reception) == lengthToRead:
+                # Header received
+                if not headerReceived:
+                    response = struct.unpack("!3I", reception)
+                    # If error
+                    if response[1] == 1:
+                        return response
+                    lengthToRead += payloadLength
+                    headerReceived = True
+                # Payload received
+                else:
+                    return struct.unpack("!3I" + str(payloadLength) + "s", reception)

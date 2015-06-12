@@ -117,12 +117,6 @@ int getRequest(int sock, Request* req)
             else // Payload received
             {
                 printf("payload received\n");
-                /*
-                for(int i = REQUEST_HEADER_SIZE; i < REQUEST_HEADER_SIZE + req->length; i += 4)
-                {
-                    buffer[i] = ntohl(buffer[i]);
-                }
-                */
                 return 1;
             }
         }
