@@ -28,14 +28,17 @@ int main(int argc, char* argv[])
         int clientSocket = waitClientConnection(listeningSocket);
 
         // TODO : Meilleurs gestion des erreurs
+        resp.error = 0;
+        resp.payload = NULL;
 
         if (getRequest(clientSocket, &req))
         {
             int fd;
-            resp.error = 0;
 
             if (req.type == CMD_READ)
             {
+                resp.payload = malloc(req.length);
+
                 if ((fd = open(filePath, O_RDONLY)) < 0)
                 {
                     perror("open");
@@ -63,20 +66,27 @@ int main(int argc, char* argv[])
         else
         {
             resp.error = 1;
-            req.length = 0;
             printf("Bad request received.\n");
         }
 
         resp.handle = req.handle;
 
+        if(resp.error)
+        {
+            req.length = 0;
+        }
+
         if (!sendResponse(clientSocket, &resp, req.length))
         {
             printf("error sending response\n");
         }
+
+        free(resp.payload);
         close(clientSocket);
     }
 
     close(listeningSocket);
+    free(filePath);
 
     return 0;
 }

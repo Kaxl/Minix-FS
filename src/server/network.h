@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define LISTENING_PORT          2000
+#define LISTENING_PORT          2200
 #define RECEPTION_TIMEOUT       5000
 
 #define REQUEST_HEADER_SIZE     20
@@ -31,7 +31,7 @@ typedef struct __attribute__ ((__packed__)) Response
     uint32_t magic;
     uint32_t error;
     uint32_t handle;
-    uint8_t payload[PAYLOAD_SIZE];
+    uint8_t *payload;
 } Response;
 
 int openListeningSocket(int port);

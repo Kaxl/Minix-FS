@@ -143,7 +143,14 @@ int sendResponse(int sock, Response* resp, uint32_t payloadLength)
     resp->handle = htonl(resp->handle);
     resp->error = htonl(resp->error);
 
-    if (write(sock, resp, RESPONSE_HEADER_SIZE + payloadLength) < 0)
+    // Sends the response header
+    if (write(sock, resp, RESPONSE_HEADER_SIZE) < 0)
+    {
+        perror("write");
+        return 0;
+    }
+    // Sends the response payload
+    if (payloadLength > 0 && write(sock, resp->payload, payloadLength) < 0)
     {
         perror("write");
         return 0;
