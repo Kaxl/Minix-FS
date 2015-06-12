@@ -11,6 +11,7 @@ from bitarray import *
 from tester_answers import *
 import unittest
 import os
+import shutil
 import sys
 
 import binascii
@@ -29,6 +30,7 @@ import binascii
 
 testfile="minixfs_lab1.img"
 workfile=testfile+".gen"
+workfilebk=testfile+".genbk"
 workfilewrite=testfile+".genwrite"
 string="dd if="+testfile+" of="+workfile+" bs=1024 2>/dev/null"
 os.system(string)
@@ -56,6 +58,7 @@ class MinixTester(unittest.TestCase):
     def test_2_bloc_device_write_bloc(self):
         string="dd if="+workfile+" of="+workfilewrite+" bs=1024 2>/dev/null"
         os.system(string)
+        shutil.copyfile(workfile, workfilebk)   # copy of workfile
         self.disk=bloc_device_network(BLOCK_SIZE,SOURCE,PORT)
         #read bloc2 and bloc5
         bloc2=self.disk.read_bloc(2)
@@ -72,9 +75,12 @@ class MinixTester(unittest.TestCase):
         bloc5=self.disk.read_bloc(5)
         self.assertEqual(bloc2,BLOC5)
         self.assertEqual(bloc5,BLOC2)
+        shutil.copyfile(workfilebk, workfile)   # restore workfile
 
     #superbloc test : read it and check object values
     def test_3_super_bloc_read_super(self):
+        string="dd if="+testfile+" of="+workfile+" bs=1024 2>/dev/null"
+        os.system(string)
         self.disk=bloc_device_network(BLOCK_SIZE,SOURCE,PORT)
         sb=minix_superbloc(self.disk)
 
@@ -119,6 +125,7 @@ class MinixTester(unittest.TestCase):
     def test_7_fs_balloc_bfree(self):
         string="dd if="+workfile+" of="+workfilewrite+" bs=1024 2>/dev/null"
         os.system(string)
+        shutil.copyfile(workfile, workfilebk)   # copy workfile
         self.minixfs=minix_file_system(SOURCE, PORT)
         new_bloc_num=self.minixfs.balloc()
         self.assertEqual(new_bloc_num,NEWBLOC1);
@@ -127,6 +134,7 @@ class MinixTester(unittest.TestCase):
         self.assertEqual(new_bloc_num,NEWBLOC2);
         new_bloc_num=self.minixfs.balloc()
         self.assertEqual(new_bloc_num,NEWBLOC3);
+        shutil.copyfile(workfilebk, workfile)   # restore workfile
         return True
 
     #testing bmap function : just check that some bmaped
@@ -189,6 +197,7 @@ class MinixTester(unittest.TestCase):
     def test_b_fs_ialloc_bloc(self):
         string="dd if="+workfile+" of="+workfilewrite+" bs=1024 2>/dev/null"
         os.system(string)
+        shutil.copyfile(workfile, workfilebk)   # copy workfile
         minixfs=minix_file_system(SOURCE, PORT)
         dir_bmap_list=[]
         for i in range(0,7):
@@ -205,9 +214,11 @@ class MinixTester(unittest.TestCase):
             bmap_bloc=minixfs.bmap(minixfs.inodes_list[56],i)
             dir_bmap_list.append(bmap_bloc)
         self.assertEqual(dir_bmap_list,IALLOC2)
+        shutil.copyfile(workfilebk, workfile)   # restore workfile
 
     #testing bloc contents and inode maps before and after add_entry
     def test_c_fs_addentry(self):
+        shutil.copyfile(workfile, workfilebk)   # copy workfile
         string="dd if="+workfile+" of="+workfilewrite+" bs=1024 2>/dev/null"
         os.system(string)
         minixfs=minix_file_system(SOURCE, PORT)
@@ -232,6 +243,7 @@ class MinixTester(unittest.TestCase):
         #check its contents
         rootnodebloc2=minixfs.disk.read_bloc(minixfs.bmap(minixfs.inodes_list[1],1))
         self.assertEqual(rootnodebloc2,ROOTNODEBLOC2MOD)
+        shutil.copyfile(workfilebk, workfile)   # restore workfile
 
     #testing bloc contents and inode maps before and after del_entry
     def test_d_fs_delentry(self):
@@ -239,6 +251,7 @@ class MinixTester(unittest.TestCase):
         names_to_del=["attime.c","cmdline.c","free","free.c","Makefile","makelog","ps","ps.0","ps.1","ps.c","psdata.c","psdata.h","ps.h","pwcache.c"]
         string="dd if="+workfile+" of="+workfilewrite+" bs=1024 2>/dev/null"
         os.system(string)
+        shutil.copyfile(workfile, workfilebk)   # copy workfile
         minixfs=minix_file_system(SOURCE, PORT)
         self.assertEqual(minixfs.bmap(minixfs.inodes_list[NODENUM],0),NODE798BLOCNUM1)
 
@@ -249,6 +262,7 @@ class MinixTester(unittest.TestCase):
             minixfs.del_entry(minixfs.inodes_list[NODENUM],name)
         nodebloc=minixfs.disk.read_bloc(minixfs.bmap(minixfs.inodes_list[NODENUM],0))
         self.assertEqual(nodebloc,NODE798BLOC1MOD)
+        shutil.copyfile(workfilebk, workfile)   # restore workfile
 
     def test_e_cleanup(self):
         #clean up
