@@ -30,8 +30,8 @@ class bloc_device_network(object):
         sock.connect(addr)
         sock.send(request)
 
-        #response = self.get_response(sock, num_of_block * self.block_size)
-
+        response = self.get_response(sock, num_of_block * self.block_size)
+        """
         response = sock.recv(12)
         response = struct.unpack("!3I", response)
 
@@ -44,22 +44,24 @@ class bloc_device_network(object):
                 payload = struct.unpack("!" + str(num_of_block * self.block_size) + "s", response)[0]
 
         sock.close()
-        #return response[3]
-        return payload
+        """
+        return response[3]
+        #return payload
 
     def write_bloc(self, block_num, block):
         """Sends a certain number of blocks to write to the server."""
         handle = random.randint(0, 4294967296)
-        request = self.create_request(1, handle, block_num * self.block_size, self.block_size, block)
+        request = self.create_request(1, handle, block_num * self.block_size, self.block_size, str(block))
         addr = (self.server_address, self.server_port)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect(addr)
         sock.send(request)
 
-        #response = self.get_response(sock, self.block_size)
-        response = sock.recv(12)
-        response = struct.unpack("!3I", response)
+        response = self.get_response(sock, 0)
+
+        #response = sock.recv(12)
+        #response = struct.unpack("!3I", response)
         """
         if response[0] == 0x87878787 and response[2] == handle:
             if response[1] == 1:
@@ -87,7 +89,6 @@ class bloc_device_network(object):
         while True:
             # Reads bytes from the socket
             reception += sock.recv(lengthToRead - len(reception))
-
             # If enough bytes were received
             if len(reception) == lengthToRead:
                 # Header received

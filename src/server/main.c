@@ -17,8 +17,10 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
+    // Makes a copy of the file path given in arguments
     char* filePath = malloc(strlen(argv[1]) * sizeof(char));
     strcpy(filePath, argv[1]);
+
     Request req;
     Response resp = {RESPONSE_MAGIC};
     int listeningSocket = openListeningSocket(LISTENING_PORT);
@@ -27,7 +29,6 @@ int main(int argc, char* argv[])
     {
         int clientSocket = waitClientConnection(listeningSocket);
 
-        // TODO : Meilleurs gestion des erreurs
         resp.error = 0;
         resp.payload = NULL;
 
@@ -71,14 +72,14 @@ int main(int argc, char* argv[])
 
         resp.handle = req.handle;
 
-        if(resp.error)
+        if (resp.error)
         {
             req.length = 0;
         }
 
         if (!sendResponse(clientSocket, &resp, req.length))
         {
-            printf("error sending response\n");
+            printf("Error sending response\n");
         }
 
         free(resp.payload);

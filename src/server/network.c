@@ -15,6 +15,7 @@ int openListeningSocket(int port)
     struct sockaddr_in address;
 
     // Creates the socket
+    printf("Creating socket\n");
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         perror("socket");
@@ -26,11 +27,21 @@ int openListeningSocket(int port)
     address.sin_addr.s_addr = htonl(INADDR_ANY);
 
     // Binds the socket to TCP port
+    printf("Binding socket to port %d\n", port);
     if ((bind(sock, (struct sockaddr*)&address, sizeof(struct sockaddr_in))) < 0)
     {
         perror("bind");
         exit(EXIT_FAILURE);
     }
+
+    // Listening on socket
+    if (listen(sock, 5) < 0)
+    {
+        perror("listen");
+        shutdown(sock, SHUT_RDWR);
+        exit(EXIT_FAILURE);
+    }
+    printf("Listening...\n");
 
     return sock;
 }
@@ -38,16 +49,8 @@ int openListeningSocket(int port)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int waitClientConnection(int listeningSocket)
 {
-    // Waits for a client to connect
-    if (listen(listeningSocket, 1) < 0)
-    {
-        perror("listen");
-        shutdown(listeningSocket, SHUT_RDWR);
-        exit(EXIT_FAILURE);
-    }
-
     struct sockaddr_in clientAddress;
-    socklen_t clientLength;
+    socklen_t clientLength = sizeof(clientAddress);
     int clientSocket;
 
     // Open a new socket for the client
@@ -57,6 +60,7 @@ int waitClientConnection(int listeningSocket)
         shutdown(listeningSocket, SHUT_RDWR);
         exit(EXIT_FAILURE);
     }
+    printf("\n--------------------\nClient accepted\n");
 
     return clientSocket;
 }
@@ -71,7 +75,8 @@ int getRequest(int sock, Request* req)
     int headerReceived = 0;
     clock_t start = clock();
 
-    while(1)
+    printf("Receiving transmission\n");
+    while (1)
     {
         // Reads bytes from the socket
         if ((nbByte = read(sock, &buffer[offset], lengthToRead - offset)) < 0)
@@ -94,7 +99,7 @@ int getRequest(int sock, Request* req)
             // Header received
             if (!headerReceived)
             {
-                printf("header received\n");
+                printf("Header received\n");
 
                 req->magic = ntohl(req->magic);
                 req->type = ntohl(req->type);
@@ -104,7 +109,7 @@ int getRequest(int sock, Request* req)
 
                 if(req->magic != REQUEST_MAGIC || (req->type != CMD_READ && req->type != CMD_WRITE))
                 {
-                    printf("bad header\n");
+                    printf("Bad header : magic=%x, type=%x\n", req->magic, req->type);
                     return 0;
                 }
                 if(req->type == CMD_READ || req->length == 0)
@@ -116,7 +121,7 @@ int getRequest(int sock, Request* req)
             }
             else // Payload received
             {
-                printf("payload received\n");
+                printf("Payload received\n");
                 return 1;
             }
         }
@@ -124,7 +129,7 @@ int getRequest(int sock, Request* req)
         // Checks if timeout
         if ((clock() - start) * 1000 / CLOCKS_PER_SEC > RECEPTION_TIMEOUT)
         {
-            printf("timeout\n");
+            printf("Timeout\n");
             return 0;
         }
     }
@@ -138,16 +143,23 @@ int sendResponse(int sock, Response* resp, uint32_t payloadLength)
     resp->error = htonl(resp->error);
 
     // Sends the response header
-    if (write(sock, resp, RESPONSE_HEADER_SIZE) < 0)
+    printf("Sending response header...\n");
+    if (write(sock, (uint8_t*)resp, RESPONSE_HEADER_SIZE) < 0)
     {
         perror("write");
+        printf("perror:write header");
         return 0;
     }
     // Sends the response payload
-    if (payloadLength > 0 && write(sock, resp->payload, payloadLength) < 0)
+    if (payloadLength > 0)
     {
-        perror("write");
-        return 0;
+        printf("Sending response payload...\n");
+        if (write(sock, resp->payload, payloadLength) < 0)
+        {
+            perror("write");
+            printf("WRITE ERROR");
+            return 0;
+        }
     }
     return 1;
 }
