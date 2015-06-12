@@ -157,8 +157,6 @@ class minix_file_system(object):
         if blk < nb_direct_bloc:
             if not inode.i_zone[blk]:
                 inode.i_zone[blk] = self.balloc()
-                # This line is add for addentry.
-                inode.i_size += BLOCK_SIZE
             return inode.i_zone[blk]
 
         # Subtract the number of directs blocks.
@@ -176,7 +174,6 @@ class minix_file_system(object):
                 indirect_bloc[blk] = self.balloc()
                 # Write a new bloc.
                 self.disk.write_bloc(indirect_bloc, inode.i_indir_zone)
-                inode.i_size += BLOCK_SIZE
             return indirect_bloc[blk]
 
         blk -= MINIX_ZONESZ
@@ -208,10 +205,13 @@ class minix_file_system(object):
     # name is an unicode string
     # parameters : directory inode, name, inode number
     def add_entry(self, dinode, name, new_node_num):
-        for i in range(0, int(round(dinode.i_size / BLOCK_SIZE)) + 1):
+        blk = 0
+        # While bmap return something, we check it.
+        while self.bmap(dinode, blk):
             # Get the block number and load the block.
-            bloc_number = self.bmap(dinode, i)
+            bloc_number = self.bmap(dinode, blk)
             bloc = bytearray(self.disk.read_bloc(bloc_number))
+            blk += 1
             # Run over the block.
             for offset in range(0, BLOCK_SIZE, DIRSIZE):
                 if not struct.unpack_from("<H", bloc, offset)[0]:
@@ -233,7 +233,7 @@ class minix_file_system(object):
         bloc[2:DIRSIZE] = name.ljust(DIRSIZE - 2, '\x00')
         # Increase the size.
         dinode.i_size += DIRSIZE
-        self.disk.write_bloc(self.ialloc_bloc(dinode, i + 1), bloc)
+        self.disk.write_bloc(self.ialloc_bloc(dinode, blk), bloc)
         return
 
     #delete an entry named "name"

@@ -33,7 +33,7 @@ import sys
 
 # server = '129.194.185.187'  # p.ex a computer in A406
 server = 'localhost'
-port = 1234
+port = 2000
 
 
 class MinixTester(unittest.TestCase):
