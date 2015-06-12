@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
+#-*- coding: utf-8 -*-
 # filesystem and bloc device unit tests
 # part 1: internal filesystem's functions.
 # tested with python2 only
@@ -8,12 +8,10 @@ from constantes import *
 from bloc_device import *
 from minixfs import *
 from bitarray import *
-from tester_answers import *
+from tester_answers2 import *
 import unittest
 import os
 import sys
-
-import binascii
 
 # Test requirements :
 # - bloc_device class : modeling a disk drive with the following methods
@@ -27,7 +25,7 @@ import binascii
 # - bitarray class : used to store and manipulated inode and zone bitmaps in memory
 #   member ofs minix_filesystem class
 
-testfile="minixfs_lab1.img"
+testfile="minixfs_lab2.img"
 workfile=testfile+".gen"
 workfilewrite=testfile+".genwrite"
 string="dd if="+testfile+" of="+workfile+" bs=1024 2>/dev/null"
@@ -56,7 +54,7 @@ class MinixTester(unittest.TestCase):
     def test_2_bloc_device_write_bloc(self):
         string="dd if="+workfile+" of="+workfilewrite+" bs=1024 2>/dev/null"
         os.system(string)
-        self.disk=bloc_device_network(BLOCK_SIZE,SOURCE,PORT)
+        self.disk=bloc_device(BLOCK_SIZE,workfilewrite)
         #read bloc2 and bloc5
         bloc2=self.disk.read_bloc(2)
         bloc5=self.disk.read_bloc(5)
@@ -78,24 +76,24 @@ class MinixTester(unittest.TestCase):
         self.disk=bloc_device_network(BLOCK_SIZE,SOURCE,PORT)
         sb=minix_superbloc(self.disk)
 
-        self.assertEqual(sb.s_ninodes,6848)
-        self.assertEqual(sb.s_nzones,20480)
+        self.assertEqual(sb.s_ninodes,704)
+        self.assertEqual(sb.s_nzones,2048)
         self.assertEqual(sb.s_imap_blocks,1)
-        self.assertEqual(sb.s_zmap_blocks,3)
-        self.assertEqual(sb.s_firstdatazone,220)
+        self.assertEqual(sb.s_zmap_blocks,1)
+        self.assertEqual(sb.s_firstdatazone,26)
         self.assertEqual(sb.s_max_size,268966912)
 
     #inode and zone map tests
     #we need to copy the original as it was modified
     #when testing write_bloc
     def test_4_fs_inode_and_bloc_bitmaps(self):
-        self.minixfs=minix_file_system(SOURCE, PORT)
+        self.minixfs=minix_file_system(SOURCE,PORT)
         self.assertEqual(self.minixfs.inode_map,INODEBITMAP1);
         self.assertEqual(self.minixfs.zone_map,ZONEBITMAP1);
 
     #inode list content test
     def test_5_fs_inode_list(self):
-        self.minixfs=minix_file_system(SOURCE, PORT)
+        self.minixfs=minix_file_system(SOURCE,PORT)
         self.assertEqual(self.minixfs.inodes_list,INODELIST);
 
 
@@ -104,7 +102,7 @@ class MinixTester(unittest.TestCase):
     #the bitmask values after/or checking the number returned
     #by ialloc after ifree and balloc after bfree.
     def test_6_fs_ialloc_ifree(self):
-        self.minixfs=minix_file_system(SOURCE, PORT)
+        self.minixfs=minix_file_system(SOURCE,PORT)
         new_inode_num=self.minixfs.ialloc()
         self.assertEqual(new_inode_num,NEWNODE1);
         self.minixfs.ifree(123)
@@ -119,7 +117,7 @@ class MinixTester(unittest.TestCase):
     def test_7_fs_balloc_bfree(self):
         string="dd if="+workfile+" of="+workfilewrite+" bs=1024 2>/dev/null"
         os.system(string)
-        self.minixfs=minix_file_system(SOURCE, PORT)
+        self.minixfs=minix_file_system(SOURCE,PORT)
         new_bloc_num=self.minixfs.balloc()
         self.assertEqual(new_bloc_num,NEWBLOC1);
         self.minixfs.bfree(123)
@@ -132,7 +130,7 @@ class MinixTester(unittest.TestCase):
     #testing bmap function : just check that some bmaped
     #blocs have the right numbers.
     def test_8_fs_bmap(self):
-        minixfs=minix_file_system(SOURCE, PORT)
+        minixfs=minix_file_system(SOURCE,PORT)
         #bmap of inode 167, an inode with triple indirects
         #containing linux-0.95.tgz. Get all blocs of the file
         #direct blocs
@@ -160,20 +158,18 @@ class MinixTester(unittest.TestCase):
     #number, and name, expect another inode number
     #do a few lookups
     def test_9_fs_lookup_entry(self):
-        minixfs=minix_file_system(SOURCE, PORT)
-        #lookup_entry, inode 798 ("/usr/src/ps-0.97"), lookup for ps.c
-        inode=minixfs.lookup_entry(minixfs.inodes_list[798],"ps.c")
+        minixfs=minix_file_system(SOURCE,PORT)
+        inode=minixfs.lookup_entry(minixfs.inodes_list[19],"data")
         self.assertEqual(inode,LOOKUPINODE1)
-        #lookup_entry, inode 212 ("/usr/src/linux/fs/minix"), lookup for namei.c
-        inode=minixfs.lookup_entry(minixfs.inodes_list[212],"namei.c")
+        inode=minixfs.lookup_entry(minixfs.inodes_list[36],"group")
         self.assertEqual(inode,LOOKUPINODE2)
 
 
     #testing namei function. Test that a few paths return
     #the expected inode number.
     def test_a_fs_namei(self):
-        minixfs=minix_file_system(SOURCE, PORT)
-        paths=["/usr/src/linux/fs/open.c","/bin/bash","/","/usr/include/assert.h"]
+        minixfs=minix_file_system(SOURCE,PORT)
+        paths=["/hepia/iti/etc/config","/hepia/iti/etc/disktab","/","/hepia/iti/etc/rc"]
         namedinodelist=[]
         for p in paths:
             namedinode=minixfs.namei(p)
@@ -189,7 +185,7 @@ class MinixTester(unittest.TestCase):
     def test_b_fs_ialloc_bloc(self):
         string="dd if="+workfile+" of="+workfilewrite+" bs=1024 2>/dev/null"
         os.system(string)
-        minixfs=minix_file_system(SOURCE, PORT)
+        minixfs=minix_file_system(SOURCE,PORT)
         dir_bmap_list=[]
         for i in range(0,7):
             bmap_bloc=minixfs.bmap(minixfs.inodes_list[56],i)
@@ -210,7 +206,7 @@ class MinixTester(unittest.TestCase):
     def test_c_fs_addentry(self):
         string="dd if="+workfile+" of="+workfilewrite+" bs=1024 2>/dev/null"
         os.system(string)
-        minixfs=minix_file_system(SOURCE, PORT)
+        minixfs=minix_file_system(SOURCE,PORT)
         self.assertEqual(minixfs.bmap(minixfs.inodes_list[1],0),ROOTNODEBLOCNUM1)
 
         rootnodebloc=minixfs.disk.read_bloc(minixfs.bmap(minixfs.inodes_list[1],0))
@@ -235,11 +231,11 @@ class MinixTester(unittest.TestCase):
 
     #testing bloc contents and inode maps before and after del_entry
     def test_d_fs_delentry(self):
-        NODENUM=798
-        names_to_del=["attime.c","cmdline.c","free","free.c","Makefile","makelog","ps","ps.0","ps.1","ps.c","psdata.c","psdata.h","ps.h","pwcache.c"]
+        NODENUM=36
+        names_to_del=["config","disktab","group","magic","mtab","mtools","passwd","profile","rc","termcap"]
         string="dd if="+workfile+" of="+workfilewrite+" bs=1024 2>/dev/null"
         os.system(string)
-        minixfs=minix_file_system(SOURCE, PORT)
+        minixfs=minix_file_system(SOURCE,PORT)
         self.assertEqual(minixfs.bmap(minixfs.inodes_list[NODENUM],0),NODE798BLOCNUM1)
 
         nodebloc=minixfs.disk.read_bloc(minixfs.bmap(minixfs.inodes_list[NODENUM],0))

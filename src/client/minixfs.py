@@ -63,6 +63,7 @@ class minix_file_system(object):
 
         return
 
+###############################################################################
     def ialloc(self):
         """
         Return the first free inode number available
@@ -78,6 +79,7 @@ class minix_file_system(object):
                 self.inodes_list[i] = minix_inode(num=i)
                 return i
 
+###############################################################################
     def ifree(self, inodnum):
         """
         Toogle an inode as available for the next ialloc().
@@ -88,22 +90,41 @@ class minix_file_system(object):
         self.inode_map[inodnum] = False
         return
 
-    # return the first free bloc index in the volume. The bitmap
-    # indicate the index from the bloc zone, add first_datazone then
-    # to the bloc index
+###############################################################################
     def balloc(self):
+        """
+        Return the first free block index in the volume.
+        The bitmap indicate the index from the bloc zone,
+        add first_datazone then to the block index.
+
+        :return:
+        """
         for i in xrange(0, self.super_bloc.s_nzones):
             if not (self.zone_map[i]):
                 self.zone_map[i] = True
                 return i + self.super_bloc.s_firstdatazone
 
-    # toggle a bloc as available for the next balloc()
-    # blocnum is an index in the zone_map
+###############################################################################
     def bfree(self, blocnum):
+        """
+        Toogle a block as available for the next balloc()
+
+        :param blocnum: index in the zone map.
+        :return:
+        """
         self.zone_map[blocnum] = False
         return
 
+###############################################################################
     def bmap(self, inode, blk):
+        """
+        Make the link between a block number of a file
+        with a block number of the disk.
+
+        :param inode:   the inode to check.
+        :param blk:     the block number.
+        :return:        the block number.
+        """
         # Case 0 : direct block.
         # Get the number of direct bloc (element in zone != 0).
         # nb_direct_bloc = sum(bloc != 0 for bloc in inode.i_zone)
@@ -138,8 +159,16 @@ class minix_file_system(object):
 
         return 0
 
-    # lookup for a name in a directory, and return its inode number, given inode directory dinode
+###############################################################################
     def lookup_entry(self, dinode, name):
+        """
+        Lookup for a name in a directory, and return its inode number,
+        given inode directory dinode.
+
+        :param dinode:  the dinode to check.
+        :param name:    the name to check.
+        :return:        the inode number of file.
+        """
         blk = 0
         # Run over blocks of inode.
         while self.bmap(dinode, blk):
@@ -151,13 +180,19 @@ class minix_file_system(object):
             for i in xrange(0, BLOCK_SIZE, DIRSIZE):
                 inode = data[i:i + DIRSIZE]
                 # Check if the name is in the inode.
-                if name in inode:
+                if name in inode[2:16]:
                     return struct.unpack('<H', data[i:i + 2])[0]
 
-    # find an inode number according to its path
-    # ex : '/usr/bin/cat'
-    # only works with absolute paths
+###############################################################################
     def namei(self, path):
+        """
+        Find an inode number according to its path.
+        ex : '/usr/bin/cat'
+        only wokrs with absolute paths.
+
+        :param path:    the path to check.
+        :return:        the inode number of the path.
+        """
         # Get the first inode (root)
         inode = self.inodes_list[MINIX_ROOT_INO].i_ino
         # We don't need the first element of the list because we already got the first inode (root).
@@ -168,8 +203,16 @@ class minix_file_system(object):
 
         return inode
 
-    # Add a new empty block in an inode.
+###############################################################################
     def ialloc_bloc(self, inode, blk):
+        """
+        Add a new empty block in a inode.
+        The block must be fill with \x00 before adding it.
+
+        :param inode:   the inode in which the block will be add.
+        :param blk:     the block number
+        :return:
+        """
         # Cas 0 : direct block.
         nb_direct_bloc = len(inode.i_zone)
         if blk < nb_direct_bloc:
@@ -219,10 +262,19 @@ class minix_file_system(object):
                 self.disk.write_bloc(indirect2_bloc_nb, bytearray("".ljust(BLOCK_SIZE, '\x00')))
                 return indirect2_bloc_nb[blk]
 
-    # create a new entry in the node
-    # name is an unicode string
-    # parameters : directory inode, name, inode number
+###############################################################################
     def add_entry(self, dinode, name, new_node_num):
+        """
+        Create a new entry in the node.
+
+        We use bmap to get the blocks number.
+        If bmap return 0, we need to allocate a new block.
+
+        :param dinode:          The directory inode.
+        :param name:            The name to add (unicode string).
+        :param new_node_num:    The inode number.
+        :return:
+        """
         blk = 0
         # While bmap return something, we check it.
         while self.bmap(dinode, blk):
@@ -254,8 +306,20 @@ class minix_file_system(object):
         self.disk.write_bloc(self.ialloc_bloc(dinode, blk), bloc)
         return
 
-    #delete an entry named "name"
+###############################################################################
     def del_entry(self, inode, name):
+        """
+        Delete an entry named 'name'.
+
+        We get the blocks number with bmap.
+
+        Set the inode number to 0 and
+        write the modified block on the disk.
+
+        :param inode:   the inode.
+        :param name:    the name to delete.
+        :return:
+        """
         # Empty the name.
         name = name.ljust(DIRSIZE - 2, '\x00')
 
