@@ -72,7 +72,8 @@ int main(int argc, char* argv[])
 
         resp.handle = req.handle;
 
-        if (resp.error)
+        // Sets the length of the payload to 0 if an error occured or if the request was of type WRITE
+        if (resp.error || req.type == CMD_WRITE)
         {
             req.length = 0;
         }
