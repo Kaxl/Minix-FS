@@ -1,0 +1,156 @@
+              
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% LaTeX Template: Project Titlepage Modified (v 0.1) by rcx
+%
+% Original Source: http://www.howtotex.com
+% Date: February 2014
+% 
+% This is a title page template which be used for articles & reports.
+% 
+% This is the modified version of the original Latex template from
+% aforementioned website.
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% 12.06.2015
+% Axel Fahy
+
+\documentclass[12pt]{article}
+\usepackage[a4paper]{geometry}
+\usepackage[utf8]{inputenc}  
+\usepackage[myheadings]{fullpage}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{graphicx, wrapfig, subcaption, setspace, booktabs}
+\usepackage[T1]{fontenc}
+\usepackage[font=small, labelfont=bf]{caption}
+\usepackage{fourier}
+\usepackage[protrusion=true, expansion=true]{microtype}
+\usepackage[english]{babel}
+\usepackage{sectsty}
+\usepackage{url, lipsum}
+
+
+\newcommand{\HRule}[1]{\rule{\linewidth}{#1}}
+\onehalfspacing
+\setcounter{tocdepth}{5}
+\setcounter{secnumdepth}{5}
+
+
+% Remove the 'Chapter' before each chapter.
+%\usepackage{titlesec}
+%\titleformat{\chapter}{}{}{0em}{\bf\LARGE} 
+
+%\makeatletter
+%\renewcommand{\@makechapterhead}[1]{%
+%\vspace*{0 pt}%
+%{\setlength{\parindent}{0pt} \raggedright \normalfont
+%\bfseries\Huge\thechapter.\ #1
+%\par\nobreak\vspace{40 pt}}}
+%\makeatother
+
+%-------------------------------------------------------------------------------
+% HEADER & FOOTER
+%-------------------------------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\setlength\headheight{15pt}
+\fancyhead[L]{}
+\fancyhead[R]{\textsl{Système d'exploitation - Minix-FS}}
+\fancyfoot[R]{\textsl{Page \thepage\ of \pageref{LastPage}}}
+%-------------------------------------------------------------------------------
+% TITLE PAGE
+%-------------------------------------------------------------------------------
+
+\begin{document}
+
+\title{ \normalsize \textsc{Système d'exploitation}
+        \\ [2.0cm]
+        \HRule{0.5pt} \\
+        \LARGE \textbf{\uppercase{Minix-FS}}
+        \HRule{2pt} \\ [0.5cm]
+        \normalsize \today \vspace*{5\baselineskip}}
+
+\date{}
+
+\author{
+        Axel Fahy - Benjamin Ganty\\
+        hepia - ITI}
+
+\clearpage
+\maketitle
+\thispagestyle{empty} % Remove the number on page title.
+\newpage
+\tableofcontents
+\newpage
+
+%-------------------------------------------------------------------------------
+% Section title formatting
+\sectionfont{\scshape}
+%-------------------------------------------------------------------------------
+
+%-------------------------------------------------------------------------------
+% BODY
+%-------------------------------------------------------------------------------
+
+\section{Introduction}
+
+L'objectif de ce projet est d'implémenter un système de fichier MINIX accessible en 
+lecture et en écriture depuis un fichier image formaté au format MINIX version 1.
+MINIX est basé sur le système de fichiers UNIX, sans les aspects complexe de ce dernier.
+\\\\
+Le projet a été séparé en deux partie. La première consistait à manipuler les structures
+de données de l'image, récupérée au préalable par des lectures de blocs, a été effectuée
+en Python 2 sur la base du canevas des classes fournis avec le projet.
+\\\\
+La deuxième partie consistait à implémenter un accès distant sur ce système de fichier.
+Pour ceci, le client (Python) se connecte à un serveur de bloc écrit en langage C.
+
+\subsection{Répartition des tâches}
+
+Pour le projet, Axel Fahy c'est occupé de la partie Python (sans les sockets).
+\\
+Quant à lui, Benjamin Ganty a implémenté le serveur en C ainsi que la partie client en 
+Python.
+Pour synchroniser les différentes modifications, nous avons utilisé un dépôt git.
+
+
+\section{État du projet}
+Le projet est fonctionnel et réussi à exécuter le \textit{tester} pour le Python ainsi
+que pour la partie avec le serveur C. 
+Les tests ont été effectués sur une machine, en utilisant l'adresse ip \textit{127.0.0.1} 
+pour la connexion.
+
+  \subsection{Python}
+
+  \subsection{C}
+
+
+\section{Difficultés rencontrées}
+
+Concernant la première partie, j'ai eu de la peine avec la méthode \textit{ialloc\_bloc()}
+, car cette fonction n'est pas entièrement expliquée dans les documents du cours. 
+Par ailleurs, les tests unitaires ne vérifiait pas le fonctionnement de la méthode 
+dans le cas d'un bloc indirect ou d'un bloc doublement indirect.
+C'est pourquoi, je ne suis pas sûr de son comportement, plus particulièrement dans 
+le cas de blocs doublement indirects.
+\\\\
+Les fichiers de tests mis à disposition ont créé beaucoup de problèmes pour
+vérifier le fonctionnement de la manipulation des structures de données via
+le serveur de blocs. Il n'était précisé nulle part que les fichiers de tests
+rechargeais l'image de base pour les tests d'après. Les fichiers de tests ne pouvait
+donc pas fonctionner avec un serveur distant pour ces raisons. C'est pour cela
+que nous avons du modifier ces fichiers de tests de manière à effectué une copie
+de sauvegarde de l'image courante pour pouvoir la réinitialiser ensuite.
+Il aurait du y avoir un test unitaire à disposition spécialement prévu pour 
+tester la communication avec les sockets.
+
+
+\section{Conclusion}
+
+En conclusion, ce projet nous a permis de découvrir le fonctionnement d'un système
+de fichier. Cela a permis de donnée un aspect pratique à la théorie étudiée 
+durant ce semestre. Il nous a également donnée l'opportunité de découvrir un
+nouveau langage, le Python.
+
+\end{document}
