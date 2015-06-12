@@ -210,8 +210,8 @@ class minix_file_system(object):
         The block must be fill with \x00 before adding it.
 
         :param inode:   the inode in which the block will be add.
-        :param blk:     the block number
-        :return:
+        :param blk:     the block number.
+        :return:        the block number.
         """
         # Cas 0 : direct block.
         nb_direct_bloc = len(inode.i_zone)
