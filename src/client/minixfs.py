@@ -88,22 +88,38 @@ class minix_file_system(object):
         self.inode_map[inodnum] = False
         return
 
-    # return the first free bloc index in the volume. The bitmap
-    # indicate the index from the bloc zone, add first_datazone then
-    # to the bloc index
     def balloc(self):
+        """
+        Return the first free bloc index in the volume.
+        The bitmap indicate the indx from the bloc zone,
+        add first_datazone then to the bloc index.
+
+        :return:
+        """
         for i in xrange(0, self.super_bloc.s_nzones):
             if not (self.zone_map[i]):
                 self.zone_map[i] = True
                 return i + self.super_bloc.s_firstdatazone
 
-    # toggle a bloc as available for the next balloc()
-    # blocnum is an index in the zone_map
     def bfree(self, blocnum):
+        """
+        Toogle a bloc as available for the next balloc()
+
+        :param blocnum: index in the zone map.
+        :return:
+        """
         self.zone_map[blocnum] = False
         return
 
     def bmap(self, inode, blk):
+        """
+        Make the link between a bloc number of a file
+        with a bloc number of the disk.
+
+        :param inode:   inode to check.
+        :param blk:     bloc number.
+        :return:
+        """
         # Case 0 : direct block.
         # Get the number of direct bloc (element in zone != 0).
         # nb_direct_bloc = sum(bloc != 0 for bloc in inode.i_zone)
