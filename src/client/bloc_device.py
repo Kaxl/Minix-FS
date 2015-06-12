@@ -4,6 +4,10 @@
 from constantes import *
 
 import binascii
+import socket
+import struct
+import random
+
 
 class bloc_device(object):
     """Class to emulate a simple bloc device.
@@ -33,4 +37,3 @@ class bloc_device(object):
             f.seek(block_num * self.block_size, 0) # Go to the right offset.
             f.write(block)
         return
-
