@@ -35,7 +35,7 @@ class bloc_device_network(object):
 
         if response[0] == 0x87878787 and response[2] == handle:
             if response[1] == 1:
-                # error
+                print("1")
             else:
                 response = sock.recv(num_of_block * self.block_size)
                 payload = struct.unpack("!" + str(num_of_block * self.block_size) + "s", response)

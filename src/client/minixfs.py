@@ -6,6 +6,7 @@ from constantes import *
 from minix_inode import *
 from minix_superbloc import *
 from bloc_device import *
+from bloc_device_network import *
 from tester_answers import *
 
 from bitarray import bitarray  # Library in C
@@ -14,10 +15,15 @@ from bitarray import bitarray  # Library in C
 class minix_file_system(object):
     """Class of the Minix File system."""
 
-    def __init__(self, filename):
+    def __init__(self, source=None, port=None):
         """Initialization of a bitarray from the bitmap of inodes."""
         # Init of disk.
-        self.disk = bloc_device(BLOCK_SIZE, filename)
+        # Depending on if we got an ip and a port, we initiate a bloc_device_network.
+        if source and port:
+            self.disk = bloc_device_network(BLOCK_SIZE, source, port)
+        else:
+            self.disk = bloc_device(BLOCK_SIZE, source)
+
         # Init of Minix Super block.
         self.super_bloc = minix_superbloc(self.disk)
         # Init of Inodes bitmap.
