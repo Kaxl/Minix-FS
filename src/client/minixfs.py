@@ -16,7 +16,15 @@ class minix_file_system(object):
     """Class of the Minix File system."""
 
     def __init__(self, source=None, port=None):
-        """Initialization of a bitarray from the bitmap of inodes."""
+        """
+        Initialization of a bitarray from the bitmap of inodes.
+
+        :param source:  the filename with the image of the source address depending
+                        on if we are on the network or not.
+        :param port:    the port for the network connection.
+        :return:
+        """
+
         # Init of disk.
         # Depending on if we got an ip and a port, we initiate a bloc_device_network.
         if source and port:
@@ -55,20 +63,28 @@ class minix_file_system(object):
 
         return
 
-    # return the first free inode number available
-    # starting at 0 and upto s.n_inodes-1.
-    # The bitmap ranges from index 0 to inod_num-1
-    # Inode 0 is never and is always set.
-    # according to the inodes bitmap
     def ialloc(self):
+        """
+        Return the first free inode number available
+        starting at 0 and upto s.n_inodes - 1.
+        Reminder : Inode 0 is never used and always set,
+        according to the inodes bitmap.
+
+        :return:
+        """
         for i in xrange(0, self.super_bloc.s_ninodes):
             if not (self.inode_map[i]):
                 self.inode_map[i] = True
                 self.inodes_list[i] = minix_inode(num=i)
                 return i
 
-    # toggle an inode as available for the next ialloc()
     def ifree(self, inodnum):
+        """
+        Toogle an inode as available for the next ialloc().
+
+        :param inodnum: the inode to free.
+        :return:
+        """
         self.inode_map[inodnum] = False
         return
 
@@ -124,17 +140,19 @@ class minix_file_system(object):
 
     # lookup for a name in a directory, and return its inode number, given inode directory dinode
     def lookup_entry(self, dinode, name):
-        # Run over blocs of inode.
-        for i in range(0, dinode.i_size):
-            bloc_number = self.bmap(dinode, i)
+        blk = 0
+        # Run over blocks of inode.
+        while self.bmap(dinode, blk):
+            bloc_number = self.bmap(dinode, blk)
             data = self.disk.read_bloc(bloc_number)
+            blk += 1
 
             # Check each inodes to compare the name.
-            for j in xrange(0, BLOCK_SIZE, INODE_SIZE):
-                inode = data[j:j + INODE_SIZE]
+            for i in xrange(0, BLOCK_SIZE, DIRSIZE):
+                inode = data[i:i + DIRSIZE]
                 # Check if the name is in the inode.
                 if name in inode:
-                    return struct.unpack('<H', data[j:j + 2])[0]
+                    return struct.unpack('<H', data[i:i + 2])[0]
 
     # find an inode number according to its path
     # ex : '/usr/bin/cat'
@@ -220,7 +238,7 @@ class minix_file_system(object):
                     # Add the name.
                     bloc[offset + 2:offset + DIRSIZE] = name.ljust(DIRSIZE - 2, '\x00')
                     # Increase the size.
-                    #dinode.i_size += DIRSIZE
+                    dinode.i_size += DIRSIZE
                     # Write the bloc.
                     self.disk.write_bloc(bloc_number, bloc)
                     return
@@ -241,9 +259,12 @@ class minix_file_system(object):
         # Empty the name.
         name = name.ljust(DIRSIZE - 2, '\x00')
 
-        for i in xrange(0, inode.i_size):
+        blk = 0
+        # While bmap return something, we check it.
+        while self.bmap(inode, blk):
             # Get the block number and load the block.
-            bloc_number = self.bmap(inode, i)
+            #bloc_number = self.bmap(inode, i)
+            bloc_number = self.bmap(inode, blk)
             bloc = bytearray(self.disk.read_bloc(bloc_number))
 
             # Run over entries of block.
@@ -254,11 +275,11 @@ class minix_file_system(object):
                     #self.ifree(inode)
                     self.disk.write_bloc(bloc_number, bloc)
                     inode.i_size -= DIRSIZE
-                    break
 
-            # Check if block is empty and free it if so.
-            if self.disk.read_bloc(bloc_number) == "".ljust(BLOCK_SIZE, '\x00'):
-                self.bfree(bloc_number)
+                    # Check if block is empty and free it if so.
+                    if self.disk.read_bloc(bloc_number) == "".ljust(BLOCK_SIZE, '\x00'):
+                        self.bfree(bloc_number)
 
+                    return
         return
 
