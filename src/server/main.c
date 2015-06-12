@@ -27,15 +27,18 @@ int main(int argc, char* argv[])
 
     while (running)
     {
+        // Waits for a client to connect
         int clientSocket = waitClientConnection(listeningSocket);
 
         resp.error = 0;
         resp.payload = NULL;
 
+        // Retreives the client's request
         if (getRequest(clientSocket, &req))
         {
             int fd;
 
+            // If READ request
             if (req.type == CMD_READ)
             {
                 resp.payload = malloc(req.length);
@@ -50,6 +53,7 @@ int main(int argc, char* argv[])
                     resp.error = 1;
                 }
             }
+            // Else if WRITE request
             else if (req.type == CMD_WRITE)
             {
                 if ((fd = open(filePath, O_WRONLY)) < 0)
@@ -78,6 +82,7 @@ int main(int argc, char* argv[])
             req.length = 0;
         }
 
+        // Sends the response
         if (!sendResponse(clientSocket, &resp, req.length))
         {
             printf("Error sending response\n");

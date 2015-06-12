@@ -32,21 +32,14 @@ class bloc_device_network(object):
 
         response = self.get_response(sock, num_of_block * self.block_size)
         """
-        response = sock.recv(12)
-        response = struct.unpack("!3I", response)
-
         if response[0] == 0x87878787 and response[2] == handle:
             if response[1] == 1:
-                print("1")
                 # error
             else:
-                response = sock.recv(num_of_block * self.block_size)
-                payload = struct.unpack("!" + str(num_of_block * self.block_size) + "s", response)[0]
-
-        sock.close()
+                # no error
         """
+        sock.close()
         return response[3]
-        #return payload
 
     def write_bloc(self, block_num, block):
         """Sends a certain number of blocks to write to the server."""
@@ -59,9 +52,6 @@ class bloc_device_network(object):
         sock.send(request)
 
         response = self.get_response(sock, 0)
-
-        #response = sock.recv(12)
-        #response = struct.unpack("!3I", response)
         """
         if response[0] == 0x87878787 and response[2] == handle:
             if response[1] == 1:

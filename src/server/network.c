@@ -147,7 +147,6 @@ int sendResponse(int sock, Response* resp, uint32_t payloadLength)
     if (write(sock, (uint8_t*)resp, RESPONSE_HEADER_SIZE) < 0)
     {
         perror("write");
-        printf("perror:write header");
         return 0;
     }
     // Sends the response payload
@@ -157,7 +156,6 @@ int sendResponse(int sock, Response* resp, uint32_t payloadLength)
         if (write(sock, resp->payload, payloadLength) < 0)
         {
             perror("write");
-            printf("WRITE ERROR");
             return 0;
         }
     }

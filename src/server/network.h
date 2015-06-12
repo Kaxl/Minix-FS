@@ -34,9 +34,16 @@ typedef struct __attribute__ ((__packed__)) Response
     uint8_t *payload;
 } Response;
 
+// Opens a listening socket on the given port
 int openListeningSocket(int port);
+
+// Waits for a client to connect on a listening socket and returns the client socket
 int waitClientConnection(int listeningSocket);
+
+// Reads a request on a listening socket
 int getRequest(int sock, Request* req);
+
+// Writes a response on a client socket
 int sendResponse(int sock, Response* resp, uint32_t payloadLength);
 
 #endif // NETWORK_H_INCLUDED
